@@ -1,5 +1,5 @@
 💬 LangGraph + Gemini AI Chatbot with Streamlit
-
+[![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/Vishwajeet3007/Agentic-AI-Using-LangGraph/tree/main/ChatBot_In_LangGraph)
 
 This repository contains a conversational AI chatbot built with LangGraph, Google's Gemini Pro model, and Streamlit. It demonstrates how to create a stateful, memory-enabled chatbot using a state graph. The project includes three different Streamlit frontends, showcasing basic, streaming, and multi-conversation (threading) capabilities — plus a new database-backed version for persistent storage.
 
@@ -140,4 +140,3 @@ LLM: Google Gemini 1.5 Flash
 Frontend: Streamlit
 
 Dependencies: python-dotenv, google-generativeai
-
