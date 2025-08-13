@@ -1,3 +1,4 @@
+# 2st Version: 2025-08-10
 """
 app.py - AI Study Buddy (Streamlit)
 Features:

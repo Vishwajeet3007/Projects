@@ -14,3 +14,9 @@ langchain_community
 transformers       # optional (for translation)
 speechrecognition  # optional (for STT)
 gTTS  
+sqlite-utils
+
+
+sentence-transformers
+langchain-google-genai
+openai

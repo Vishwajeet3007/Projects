@@ -1,3 +1,4 @@
+# 1st Version: 2025-08-09
 """
 📚 AI Study Buddy
 Upload your syllabus/book PDF and ask questions.
