@@ -1,0 +1,22 @@
+streamlit
+openai
+langchain
+faiss-cpu
+pypdf
+sentence-transformers
+python-dotenv
+langchain-google-genai
+langchain-openai
+langchain-text-splitters
+langchain-google-genai
+google-generativeai 
+langchain_community
+transformers       # optional (for translation)
+speechrecognition  # optional (for STT)
+gTTS  
+sqlite-utils
+
+
+sentence-transformers
+langchain-google-genai
+openai
