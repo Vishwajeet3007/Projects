@@ -15,12 +15,9 @@ transformers       # optional (for translation)
 speechrecognition  # optional (for STT)
 gTTS  
 sqlite-utils
-
-
 sentence-transformers
 langchain-google-genai
 openai
-
 aiosqlite==0.21.0
 altair==5.5.0
 annotated-types==0.7.0
