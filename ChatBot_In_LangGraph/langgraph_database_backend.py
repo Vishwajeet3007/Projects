@@ -21,7 +21,7 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 #     temperature=0.7
 # )
 
-llm = ChatGoogleGenerativeAI(model="models/gemini-2.5-flash")
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 class ChatState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
 

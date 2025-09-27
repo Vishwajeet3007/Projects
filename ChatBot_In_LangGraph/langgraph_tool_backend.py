@@ -17,7 +17,7 @@ import os
 load_dotenv()
 
 # 1. LLM 
-llm = ChatGoogleGenerativeAI(model="models/gemini-2.5-flash")
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 # 2. Google Search Tool
 # search = GoogleSearchAPIWrapper()
