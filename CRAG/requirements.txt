@@ -7,3 +7,4 @@ faiss-cpu
 tavily-python
 python-dotenv
 pydantic
+pypdf
