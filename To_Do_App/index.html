@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do App</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --bg-accent: radial-gradient(circle at top left, #dbeafe 0%, #f4f7fb 45%, #eef2ff 100%);
+      --card: rgba(255, 255, 255, 0.78);
+      --card-strong: #ffffff;
+      --text: #172033;
+      --muted: #667085;
+      --border: rgba(15, 23, 42, 0.1);
+      --shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+      --chip: #eff6ff;
+      --input: #ffffff;
+    }
+
+    body.dark {
+      --bg: #0f172a;
+      --bg-accent: radial-gradient(circle at top left, #1e293b 0%, #0f172a 55%, #111827 100%);
+      --card: rgba(15, 23, 42, 0.82);
+      --card-strong: #111c34;
+      --text: #e5edf8;
+      --muted: #94a3b8;
+      --border: rgba(148, 163, 184, 0.2);
+      --shadow: 0 20px 45px rgba(2, 6, 23, 0.45);
+      --primary: #60a5fa;
+      --primary-hover: #3b82f6;
+      --danger: #f87171;
+      --danger-hover: #ef4444;
+      --success: #34d399;
+      --chip: rgba(37, 99, 235, 0.16);
+      --input: #0b1220;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-accent);
+      color: var(--text);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      width: min(760px, calc(100% - 32px));
+      margin: 48px auto;
+    }
+
+    .app {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 32px 32px 24px;
+      background:
+        linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(16, 185, 129, 0.08)),
+        transparent;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .title h1 {
+      font-size: clamp(1.9rem, 4vw, 2.7rem);
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .title p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .theme-toggle {
+      border: 1px solid var(--border);
+      background: var(--card-strong);
+      color: var(--text);
+      padding: 12px 16px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      transform: translateY(-1px);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--card-strong);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .stat-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 6px;
+    }
+
+    .stat-card strong {
+      font-size: 1.5rem;
+    }
+
+    .content {
+      padding: 24px 32px 32px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .task-form,
+    .search-row {
+      display: grid;
+      gap: 12px;
+    }
+
+    .task-form {
+      grid-template-columns: 1.6fr 1fr auto;
+    }
+
+    .search-row {
+      grid-template-columns: 1fr;
+    }
+
+    input[type="text"],
+    input[type="date"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--input);
+      color: var(--text);
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .btn {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 0.98rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .task-list {
+      list-style: none;
+      display: grid;
+      gap: 14px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: var(--card-strong);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .task-item:hover {
+      transform: translateY(-2px);
+    }
+
+    .task-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .task-checkbox {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      accent-color: var(--success);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .task-info {
+      min-width: 0;
+    }
+
+    .task-text {
+      font-size: 1rem;
+      line-height: 1.5;
+      word-break: break-word;
+      margin-bottom: 8px;
+    }
+
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--chip);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 0.85rem;
+    }
+
+    .completed .task-text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .completed {
+      opacity: 0.82;
+    }
+
+    .delete-btn {
+      border: none;
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--danger);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      flex-shrink: 0;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .delete-btn:hover {
+      background: rgba(239, 68, 68, 0.18);
+      color: var(--danger-hover);
+      transform: translateY(-1px);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 28px 18px;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      background: rgba(148, 163, 184, 0.05);
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        width: min(100% - 20px, 760px);
+        margin: 20px auto;
+      }
+
+      .hero,
+      .content {
+        padding: 22px 18px;
+      }
+
+      .hero-top,
+      .task-item {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .stats,
+      .task-form {
+        grid-template-columns: 1fr;
+      }
+
+      .delete-btn,
+      .theme-toggle,
+      .btn-primary {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="app">
+      <header class="hero">
+        <div class="hero-top">
+          <div class="title">
+            <h1>My To-Do List</h1>
+            <p>Keep track of your tasks, due dates, and progress in one simple place.</p>
+          </div>
+          <button id="themeToggle" class="theme-toggle" type="button">Toggle Dark Mode</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat-card">
+            <span>Total Tasks</span>
+            <strong id="totalTasks">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Completed</span>
+            <strong id="completedTasks">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Pending</span>
+            <strong id="pendingTasks">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="controls">
+          <form id="taskForm" class="task-form">
+            <input id="taskInput" type="text" placeholder="Enter a task..." autocomplete="off">
+            <input id="dueDateInput" type="date">
+            <button class="btn btn-primary" type="submit">Add Task</button>
+          </form>
+
+          <div class="search-row">
+            <input id="searchInput" type="text" placeholder="Search tasks in real time...">
+          </div>
+        </div>
+
+        <ul id="taskList" class="task-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const TASKS_KEY = "todo-app-tasks";
+    const THEME_KEY = "todo-app-theme";
+
+    const taskForm = document.getElementById("taskForm");
+    const taskInput = document.getElementById("taskInput");
+    const dueDateInput = document.getElementById("dueDateInput");
+    const searchInput = document.getElementById("searchInput");
+    const taskList = document.getElementById("taskList");
+    const themeToggle = document.getElementById("themeToggle");
+    const totalTasks = document.getElementById("totalTasks");
+    const completedTasks = document.getElementById("completedTasks");
+    const pendingTasks = document.getElementById("pendingTasks");
+
+    let tasks = loadTasks();
+    let searchText = "";
+
+    function loadTasks() {
+      try {
+        const storedTasks = localStorage.getItem(TASKS_KEY);
+        return storedTasks ? JSON.parse(storedTasks) : [];
+      } catch (error) {
+        console.error("Could not load tasks from local storage:", error);
+        return [];
+      }
+    }
+
+    function saveTasks() {
+      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+    }
+
+    function loadTheme() {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme === "dark") {
+        document.body.classList.add("dark");
+      }
+    }
+
+    function saveTheme(isDark) {
+      localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) {
+        return "No due date";
+      }
+
+      const date = new Date(dateString + "T00:00:00");
+      return new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      }).format(date);
+    }
+
+    function addTask(text, dueDate) {
+      const newTask = {
+        id: Date.now(),
+        text: text.trim(),
+        dueDate,
+        completed: false
+      };
+
+      tasks.unshift(newTask);
+      saveTasks();
+      renderTasks();
+    }
+
+    function toggleTask(taskId) {
+      tasks = tasks.map((task) =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
+      );
+      saveTasks();
+      renderTasks();
+    }
+
+    function deleteTask(taskId) {
+      tasks = tasks.filter((task) => task.id !== taskId);
+      saveTasks();
+      renderTasks();
+    }
+
+    function getFilteredTasks() {
+      return tasks.filter((task) =>
+        task.text.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    function updateStats() {
+      const completedCount = tasks.filter((task) => task.completed).length;
+
+      totalTasks.textContent = tasks.length;
+      completedTasks.textContent = completedCount;
+      pendingTasks.textContent = tasks.length - completedCount;
+    }
+
+    function createEmptyState(message) {
+      const emptyItem = document.createElement("li");
+      emptyItem.className = "empty-state";
+      emptyItem.textContent = message;
+      return emptyItem;
+    }
+
+    function renderTasks() {
+      const filteredTasks = getFilteredTasks();
+      taskList.innerHTML = "";
+
+      if (tasks.length === 0) {
+        taskList.appendChild(createEmptyState("No tasks yet. Add your first task above."));
+      } else if (filteredTasks.length === 0) {
+        taskList.appendChild(createEmptyState("No matching tasks found."));
+      } else {
+        filteredTasks.forEach((task) => {
+          const listItem = document.createElement("li");
+          listItem.className = "task-item";
+
+          if (task.completed) {
+            listItem.classList.add("completed");
+          }
+
+          listItem.innerHTML = `
+            <div class="task-main">
+              <input
+                class="task-checkbox"
+                type="checkbox"
+                ${task.completed ? "checked" : ""}
+                aria-label="Mark task as completed"
+              >
+              <div class="task-info">
+                <p class="task-text"></p>
+                <div class="task-meta">
+                  <span class="tag">${task.dueDate ? "Due: " + formatDate(task.dueDate) : "No due date"}</span>
+                  <span class="tag">${task.completed ? "Completed" : "Pending"}</span>
+                </div>
+              </div>
+            </div>
+            <button class="delete-btn" type="button">Delete</button>
+          `;
+
+          listItem.querySelector(".task-text").textContent = task.text;
+
+          listItem.querySelector(".task-checkbox").addEventListener("change", function () {
+            toggleTask(task.id);
+          });
+
+          listItem.querySelector(".delete-btn").addEventListener("click", function () {
+            deleteTask(task.id);
+          });
+
+          taskList.appendChild(listItem);
+        });
+      }
+
+      updateStats();
+    }
+
+    taskForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const taskText = taskInput.value.trim();
+      const dueDate = dueDateInput.value;
+
+      if (!taskText) {
+        taskInput.focus();
+        return;
+      }
+
+      addTask(taskText, dueDate);
+      taskForm.reset();
+      taskInput.focus();
+    });
+
+    searchInput.addEventListener("input", function (event) {
+      searchText = event.target.value;
+      renderTasks();
+    });
+
+    themeToggle.addEventListener("click", function () {
+      const isDark = document.body.classList.toggle("dark");
+      saveTheme(isDark);
+    });
+
+    loadTheme();
+    renderTasks();
+  </script>
+</body>
+</html>
