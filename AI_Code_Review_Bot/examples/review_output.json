@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "source_type": "raw_code",
+    "source_identifier": "math_utils.py",
+    "reviewed_at": "2026-03-22T10:00:00Z",
+    "agent_versions": {
+      "llm": "gpt-4.1-mini",
+      "workflow": "langgraph-v1"
+    },
+    "static_analysis": {
+      "languages": {
+        "python": 1
+      },
+      "file_count": 1,
+      "python": {
+        "functions": 1,
+        "classes": 0,
+        "imports": [],
+        "issues": []
+      }
+    },
+    "rag_context": [
+      "Validate untrusted input close to the boundary."
+    ],
+    "execution_notes": [
+      "Static analysis completed before agent execution.",
+      "RAG context retrieved from local best-practice knowledge base."
+    ]
+  },
+  "report": {
+    "bugs": [
+      {
+        "title": "Division by zero edge case",
+        "description": "The function does not guard against b == 0.",
+        "severity": "medium",
+        "file_path": "math_utils.py",
+        "line": 2,
+        "recommendation": "Validate the denominator and raise a clear ValueError."
+      }
+    ],
+    "security_issues": [],
+    "time_complexity": "O(1)",
+    "space_complexity": "O(1)",
+    "optimizations": [
+      "Add explicit input validation for denominator values.",
+      "Document expected numeric types and failure behavior."
+    ],
+    "refactored_code": "def divide(a: float, b: float) -> float:\n    if b == 0:\n        raise ValueError('b must not be zero')\n    return a / b\n",
+    "documentation": "def divide(a: float, b: float) -> float:\n    \"\"\"Return the quotient of a and b.\n\n    Raises:\n        ValueError: If b is zero.\n    \"\"\"\n",
+    "unit_tests": "import pytest\n\nfrom math_utils import divide\n\n\ndef test_divide_returns_quotient():\n    assert divide(6, 3) == 2\n\n\ndef test_divide_raises_for_zero_denominator():\n    with pytest.raises(ValueError):\n        divide(1, 0)\n",
+    "code_quality_score": 8,
+    "final_summary": "The function is simple and efficient but should protect against division-by-zero and clarify behavior with docstrings and tests."
+  }
+}

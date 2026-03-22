@@ -1,0 +1,18 @@
+name: Automatic PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  trigger-review:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.CODE_REVIEW_API_URL != '' }}
+    steps:
+      - name: Trigger remote AI code review
+        env:
+          CODE_REVIEW_API_URL: ${{ secrets.CODE_REVIEW_API_URL }}
+        run: |
+          curl -X POST "$CODE_REVIEW_API_URL/review-pr" \
+            -H "Content-Type: application/json" \
+            -d '{"pr_url":"${{ github.event.pull_request.html_url }}"}'

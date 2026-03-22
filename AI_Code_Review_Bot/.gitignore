@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.pytest_cache_local/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage/
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Node / frontend
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# VS Code / editor / OS
+.vscode-test/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local data and vector stores
+data/
+data/faiss_index/
+
+# Local temp and sandbox artifacts
+.tmp/
+.docker-tmp/
+pytest-cache-files-*/
+*.log
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3

@@ -1,0 +1,52 @@
+{
+  "name": "ai-code-review-bot-extension",
+  "displayName": "AI Code Review Bot",
+  "description": "Review code, repositories, and pull requests with the AI Code Review Bot backend.",
+  "version": "1.0.0",
+  "publisher": "local-dev",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onCommand:aiCodeReview.reviewCurrentFile",
+    "onCommand:aiCodeReview.reviewRepositoryUrl",
+    "onCommand:aiCodeReview.reviewPullRequestUrl"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiCodeReview.reviewCurrentFile",
+        "title": "AI Code Review: Review Current File"
+      },
+      {
+        "command": "aiCodeReview.reviewRepositoryUrl",
+        "title": "AI Code Review: Review Repository URL"
+      },
+      {
+        "command": "aiCodeReview.reviewPullRequestUrl",
+        "title": "AI Code Review: Review Pull Request URL"
+      }
+    ],
+    "configuration": {
+      "title": "AI Code Review Bot",
+      "properties": {
+        "aiCodeReview.apiBaseUrl": {
+          "type": "string",
+          "default": "http://localhost:8000/api/v1",
+          "description": "Base URL of the AI Code Review Bot backend API."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.9.2"
+  }
+}
