@@ -53,6 +53,30 @@ def init_db():
     conn.close()
 
 
+def create_user(name, email, password):
+    """
+    Creates a new user with the given name, email, and password.
+    Hashes the password using werkzeug before storing.
+    Returns the new user's id.
+    Raises sqlite3.IntegrityError if email already exists.
+    """
+    password_hash = generate_password_hash(password)
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+            (name, email, password_hash)
+        )
+
+        user_id = cursor.lastrowid
+        conn.commit()
+        return user_id
+    finally:
+        conn.close()
+
+
 def seed_db():
     """
     Inserts demo user and 8 sample expenses.
