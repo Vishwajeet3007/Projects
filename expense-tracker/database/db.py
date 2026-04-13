@@ -77,6 +77,28 @@ def create_user(name, email, password):
         conn.close()
 
 
+def get_user_by_email(email):
+    """
+    Fetches a user row by email address for authentication.
+    Returns the user dict with keys: id, name, email, password_hash, created_at
+    Returns None if no user found.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            "SELECT id, name, email, password_hash, created_at FROM users WHERE email = ?",
+            (email,)
+        )
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
+    finally:
+        conn.close()
+
+
 def seed_db():
     """
     Inserts demo user and 8 sample expenses.
