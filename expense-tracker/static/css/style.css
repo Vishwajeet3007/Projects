@@ -530,6 +530,22 @@ a { color: inherit; text-decoration: none; }
     color: var(--ink-faint);
 }
 
+.footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.footer-links a {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+}
+
+.footer-links a:hover {
+    color: var(--paper);
+}
+
 /* ------------------------------------------------------------------ */
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
@@ -689,5 +705,308 @@ a { color: inherit; text-decoration: none; }
     .modal-content {
         padding: 1.5rem;
         width: 95%;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Profile Page                                                         */
+/* ------------------------------------------------------------------ */
+
+.profile-section {
+    padding: 3rem 2rem;
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+.profile-header {
+    margin-bottom: 2.5rem;
+}
+
+.profile-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+}
+
+.profile-subtitle {
+    font-size: 0.9rem;
+    color: var(--ink-muted);
+}
+
+/* User Card */
+.user-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-name {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+}
+
+.user-email {
+    font-size: 0.9rem;
+    color: var(--ink-muted);
+    margin-bottom: 0.5rem;
+}
+
+.user-since {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    color: var(--ink);
+}
+
+/* Transactions Table */
+.transactions-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--ink);
+    margin-bottom: 1rem;
+}
+
+.transactions-table {
+    width: 100%;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    border-collapse: collapse;
+}
+
+.transactions-table th {
+    text-align: left;
+    padding: 1rem 1.25rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--paper-warm);
+}
+
+.transactions-table td {
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.transactions-table tr:last-child td {
+    border-bottom: none;
+}
+
+.transactions-table .date-col {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+}
+
+.transactions-table .desc-col {
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+.transactions-table .amount-col {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--ink);
+    text-align: right;
+}
+
+/* Category Badges */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badge-food {
+    background: #e8f0eb;
+    color: #2d5a3d;
+}
+
+.badge-transport {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.badge-entertainment {
+    background: #fdf3e3;
+    color: #9c5e00;
+}
+
+.badge-shopping {
+    background: #fce4ec;
+    color: #ad1457;
+}
+
+.badge-utilities {
+    background: #ede7f6;
+    color: #4527a0;
+}
+
+.badge-other {
+    background: var(--border-soft);
+    color: var(--ink-muted);
+}
+
+/* Category Breakdown */
+.category-breakdown {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+}
+
+.breakdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.breakdown-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.breakdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.breakdown-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+.breakdown-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+}
+
+.breakdown-amount {
+    font-family: var(--font-display);
+    color: var(--ink);
+}
+
+.breakdown-percent {
+    color: var(--ink-muted);
+}
+
+.breakdown-bar-track {
+    height: 8px;
+    background: var(--border-soft);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.breakdown-bar {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.6s ease;
+}
+
+.breakdown-bar-1 { background: var(--accent); }
+.breakdown-bar-2 { background: var(--accent-2); }
+.breakdown-bar-3 { background: #5b7fa6; }
+.breakdown-bar-4 { background: #8b5e83; }
+.breakdown-bar-5 { background: #5a8f7b; }
+
+/* Responsive */
+@media (max-width: 900px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .profile-section {
+        padding: 2rem 1rem;
+    }
+
+    .user-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .transactions-table {
+        font-size: 0.85rem;
+    }
+
+    .transactions-table th,
+    .transactions-table td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .breakdown-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
     }
 }
