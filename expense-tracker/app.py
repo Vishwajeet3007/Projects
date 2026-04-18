@@ -114,7 +114,54 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    from flask import session
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    # Fetch user info from database
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, email, created_at FROM users WHERE id = ?", (session.get("user_id"),))
+    user = cursor.fetchone()
+    conn.close()
+
+    user_info = {
+        "name": user["name"],
+        "email": user["email"],
+        "member_since": user["created_at"][:10] if user["created_at"] else "Unknown"
+    }
+
+    # Hardcoded summary stats
+    summary_stats = {
+        "total_spent": 1250.50,
+        "transaction_count": 24,
+        "top_category": "Food & Dining"
+    }
+
+    # Hardcoded transactions
+    transactions = [
+        {"date": "2026-04-15", "description": "Grocery shopping", "category": "Food & Dining", "amount": 85.20},
+        {"date": "2026-04-14", "description": "Netflix subscription", "category": "Entertainment", "amount": 15.99},
+        {"date": "2026-04-12", "description": "Gas station", "category": "Transport", "amount": 45.00},
+        {"date": "2026-04-10", "description": "Restaurant dinner", "category": "Food & Dining", "amount": 62.50},
+        {"date": "2026-04-08", "description": "Uber ride", "category": "Transport", "amount": 18.75},
+    ]
+
+    # Hardcoded category breakdown
+    category_breakdown = [
+        {"name": "Food & Dining", "amount": 450.75, "percentage": 36},
+        {"name": "Transport", "amount": 320.00, "percentage": 26},
+        {"name": "Entertainment", "amount": 180.50, "percentage": 14},
+        {"name": "Shopping", "amount": 150.25, "percentage": 12},
+        {"name": "Utilities", "amount": 149.00, "percentage": 12},
+    ]
+
+    return render_template("profile.html",
+                           user_info=user_info,
+                           summary_stats=summary_stats,
+                           transactions=transactions,
+                           category_breakdown=category_breakdown)
 
 
 @app.route("/expenses/add")

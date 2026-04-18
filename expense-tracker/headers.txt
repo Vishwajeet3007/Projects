@@ -1,0 +1,10 @@
+HTTP/1.1 302 FOUND
+Server: Werkzeug/3.1.6 Python/3.13.3
+Date: Sat, 18 Apr 2026 03:20:30 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 203
+Location: /profile
+Vary: Cookie
+Set-Cookie: session=eyJfZmxhc2hlcyI6W3siIHQiOlsibWVzc2FnZSIsIldlbGNvbWUgYmFjayEiXX1dLCJ1c2VyX2lkIjoxLCJ1c2VyX25hbWUiOiJEZW1vIFVzZXIifQ.aeL4fg.J4uOYgM1RJMdo4G5pDsWMsyyvsI; HttpOnly; Path=/
+Connection: close
+
