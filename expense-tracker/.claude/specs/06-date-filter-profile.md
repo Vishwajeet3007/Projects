@@ -1,38 +1,65 @@
 # Spec: Date Filter for Profile Page
 
 ## Overview
-Step 6 adds a date range filter to the profile page, allowing users to filter their expense transactions by a custom date range. The filter will include preset options (Last 7 days, Last 30 days, This month, Last month) as well as custom date range pickers. This feature enhances the profile page by letting users analyze their spending patterns over specific time periods without needing to manually scan through all transactions.
+Step 6 adds a date-range filter to the existing `/profile` route so users can
+narrow the transaction list, summary stats, and category breakdown to a specific
+period. The filter is driven entirely by query-string parameters (`date_from` and
+`date_to`) on `GET /profile`, requiring no new routes. A compact filter bar
+with four quick-select presets ("This Month", "Last 3 Months", "Last 6 Months",
+"All Time") and two `<input type="date">` fields lets users pick any custom range.
+All three data sections (summary stats, recent transactions, category breakdown)
+must respect the active date filter.
 
 ## Depends on
-- Step 1: Database setup (tables and `get_db()` exist)
-- Step 2: Registration (users are stored in the database)
-- Step 3: Login / Logout (`session["user_id"]` is set on login)
-- Step 4: Profile page static UI (template already renders all four sections)
-- Step 5: Backend connection (profile page displays real data from database)
+- Step 1: Database setup (`expenses` table with a `date` column must exist)
+- Step 4: Profile page UI (template with all four sections must exist)
+- Step 5: Backend connection (`get_summary_stats`, `get_recent_transactions`,
+  `get_category_breakdown` in `database/queries.py` must exist and be wired to
+  the `/profile` route)
 
 ## Routes
-No new routes. Modify existing `GET /profile` to accept optional query parameters:
-- `start_date` — ISO format date string (YYYY-MM-DD)
-- `end_date` — ISO format date string (YYYY-MM-DD)
-- `preset` — preset filter name: `7d`, `30d`, `this_month`, `last_month`
+No new routes. The existing `GET /profile` route is modified to read optional
+query parameters:
+- `date_from` — ISO date string `YYYY-MM-DD`, inclusive lower bound
+- `date_to`   — ISO date string `YYYY-MM-DD`, inclusive upper bound
+
+If either parameter is absent or malformed, the route falls back to an "All
+Time" (unfiltered) view rather than erroring out.
 
 ## Database changes
-No database changes. The `expenses` table already has the `date` column which will be used for filtering.
+No database changes. The `expenses.date` column (`TEXT`, `YYYY-MM-DD`) already
+supports `BETWEEN` comparison in SQLite.
 
 ## Templates
 - **Modify**: `templates/profile.html`
-  - Add a filter bar above the "Recent Transactions" section
-  - Include preset filter buttons (7 days, 30 days, This month, Last month)
-  - Add custom date range inputs (start date, end date)
-  - Add an "Apply" button and "Clear" button
-  - Display the current filter range as a label (e.g., "Showing: Last 7 days" or "Showing: Apr 1, 2026 - Apr 30, 2026")
-  - Update transaction list and category breakdown to reflect filtered data
-  - Update summary stats to reflect filtered totals
+  - Add a filter bar section above the summary stats row containing:
+    - Four quick-select preset buttons: "This Month", "Last 3 Months",
+      "Last 6 Months", "All Time" — each a link to `/profile` with the
+      appropriate `date_from`/`date_to` query params
+    - A custom range sub-form with two `<input type="date">` fields
+      (`date_from`, `date_to`) and an "Apply" submit button
+    - The currently active preset or custom range must be visually highlighted
+      (active state on the button)
+  - No structural changes to any existing section; only Jinja variables fed
+    to them change when the filter is active
 
 ## Files to change
-- `app.py` — modify `profile()` route to parse date filter query parameters and pass to query functions
-- `templates/profile.html` — add date filter UI components
-- `database/queries.py` — add optional `start_date` and `end_date` parameters to existing query functions
+- `app.py`
+  - In the `profile()` view: read `date_from` and `date_to` from
+    `request.args`; validate they are well-formed ISO dates; pass them to each
+    query helper; pass the validated values back to the template so the filter
+    bar can reflect the active state
+- `database/queries.py`
+  - `get_summary_stats(user_id, date_from=None, date_to=None)` — add optional
+    date-range params; when both are provided, add `AND date BETWEEN ? AND ?`
+    to the `expenses` queries
+  - `get_recent_transactions(user_id, limit=10, date_from=None, date_to=None)` —
+    same pattern; ordering and limit remain unchanged
+  - `get_category_breakdown(user_id, date_from=None, date_to=None)` — same
+    pattern; percentage recalculation logic remains unchanged
+- `templates/profile.html` — add filter bar (see Templates section)
+- `static/css/profile.css` — add styles for the filter bar and active-preset
+  button state using CSS variables only
 
 ## Files to create
 No new files.
@@ -42,33 +69,42 @@ No new dependencies.
 
 ## Rules for implementation
 - No SQLAlchemy or ORMs — raw `sqlite3` only via `get_db()`
-- Parameterised queries only — never string-format values into SQL
-- Foreign keys PRAGMA must be enabled on every connection (already done in `get_db()`)
+- Parameterised queries only — never string-format dates into SQL; use `?`
+  placeholders even for the date-range bounds
+- Passwords hashed with werkzeug (no changes to auth in this step)
 - Use CSS variables — never hardcode hex values
 - All templates extend `base.html`
 - No inline styles
-- Currency must always display as ₹ — never £ or $
-- Date filter UI must be responsive and mobile-friendly
-- Preset filters must calculate date ranges dynamically based on current date
-- Custom date range must validate that start_date <= end_date
-- If invalid dates are provided, fall back to showing all data (no filter)
-- Query functions must handle optional date parameters gracefully — if None, return all data
-- Filter state should persist in URL query params so page refresh maintains the filter
-- When no transactions match the filter, display a friendly "No transactions found" message
+- Date validation in `app.py`: attempt `datetime.strptime(value, "%Y-%m-%d")`;
+  on `ValueError`, treat the param as absent (fall back to no filter)
+- Preset links must be generated with `url_for("profile", date_from=..., date_to=...)`
+  — never hardcoded URL strings in the template
+- When `date_from` and `date_to` are both absent, all three query helpers must
+  behave identically to their Step 5 behaviour (unfiltered)
+- If `date_from > date_to` after validation, treat both as absent (no filter)
+  and flash a user-visible error message: "Start date must be before end date."
+- The "All Time" preset must pass no query params (clean `/profile` URL)
+- Preset date calculations (e.g. "This Month" → first day of current month)
+  must be computed in `app.py`, not in the template
 
 ## Definition of done
-- [ ] Profile page displays a date filter bar above the transactions table
-- [ ] Four preset filter buttons are visible: "Last 7 days", "Last 30 days", "This month", "Last month"
-- [ ] Two date input fields for custom range selection (start and end date)
-- [ ] "Apply" button filters transactions based on selected range
-- [ ] "Clear" button resets to show all transactions
-- [ ] Current filter range is displayed as a text label
-- [ ] Clicking preset buttons updates the URL with `?preset=7d`, `?preset=30d`, etc.
-- [ ] Custom date range updates URL with `?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
-- [ ] Summary stats (total spent, transaction count, top category) update to reflect filtered data
-- [ ] Transaction list shows only expenses within the selected date range
-- [ ] Category breakdown recalculates percentages based on filtered transactions
-- [ ] When no transactions match the filter, a "No transactions found" message is shown
-- [ ] Invalid date ranges fall back to showing all data without error
-- [ ] Page refresh maintains the current filter state (URL params persist)
-- [ ] Filter UI is styled consistently with the rest of the profile page
+- [ ] Visiting `/profile` with no query params returns the same data as Step 5
+  (unfiltered, all expenses)
+- [ ] Clicking "This Month" filters all three sections to the current calendar
+  month only
+- [ ] Clicking "Last 3 Months" filters to expenses in the 3-month window ending
+  today
+- [ ] Clicking "Last 6 Months" filters to expenses in the 6-month window ending
+  today
+- [ ] Clicking "All Time" removes any active filter and shows all expenses
+- [ ] Submitting a custom date range with valid `date_from` and `date_to` shows
+  only expenses within that range in all three sections
+- [ ] Submitting a range where `date_from > date_to` shows a flash error and
+  falls back to the unfiltered view
+- [ ] Submitting a malformed date string (e.g. `date_from=not-a-date`) does not
+  crash the app — it silently falls back to the unfiltered view
+- [ ] The active preset button or custom-range fields visually indicate which
+  filter is currently applied
+- [ ] All amounts continue to display the ₹ symbol regardless of the active filter
+- [ ] A user with no expenses in the selected range sees ₹0.00 total spent, 0
+  transactions, and an empty category breakdown — no errors

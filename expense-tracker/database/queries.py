@@ -40,30 +40,46 @@ def get_user_by_id(user_id):
         conn.close()
 
 
-def get_summary_stats(user_id):
+def get_summary_stats(user_id, date_from=None, date_to=None):
     """
     Calculates summary statistics for a user's expenses.
     Returns dict with total_spent, transaction_count, top_category.
     Returns zeros and "—" if user has no expenses.
+    Optional date_from and date_to filter expenses by date range (inclusive).
     """
     conn = get_db()
     cursor = conn.cursor()
 
     try:
         # Get total spent and transaction count
-        cursor.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count FROM expenses WHERE user_id = ?",
-            (user_id,)
-        )
+        if date_from and date_to:
+            cursor.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count "
+                "FROM expenses WHERE user_id = ? AND date BETWEEN ? AND ?",
+                (user_id, date_from, date_to)
+            )
+        else:
+            cursor.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count FROM expenses WHERE user_id = ?",
+                (user_id,)
+            )
         row = cursor.fetchone()
         total_spent = round(row["total"], 2)
         transaction_count = row["count"]
 
-        # Get top category (category with highest total spending)
-        cursor.execute(
-            "SELECT category FROM expenses WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
-            (user_id,)
-        )
+        # Get top category
+        if date_from and date_to:
+            cursor.execute(
+                "SELECT category FROM expenses WHERE user_id = ? AND date BETWEEN ? AND ? "
+                "GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+                (user_id, date_from, date_to)
+            )
+        else:
+            cursor.execute(
+                "SELECT category FROM expenses WHERE user_id = ? "
+                "GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+                (user_id,)
+            )
         top_row = cursor.fetchone()
         top_category = top_row["category"] if top_row else "—"
 
@@ -76,20 +92,31 @@ def get_summary_stats(user_id):
         conn.close()
 
 
-def get_recent_transactions(user_id, limit=10):
+def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """
     Fetches recent expenses for a user, ordered by date descending.
     Returns list of dicts with date, description, category, amount.
     Returns empty list if no expenses.
+    Optional date_from and date_to filter expenses by date range (inclusive).
     """
     conn = get_db()
     cursor = conn.cursor()
 
     try:
-        cursor.execute(
-            "SELECT date, description, category, amount FROM expenses WHERE user_id = ? ORDER BY date DESC LIMIT ?",
-            (user_id, limit)
-        )
+        # Fetch recent transactions with optional date filter
+        if date_from and date_to:
+            cursor.execute(
+                "SELECT date, description, category, amount FROM expenses "
+                "WHERE user_id = ? AND date BETWEEN ? AND ? "
+                "ORDER BY date DESC LIMIT ?",
+                (user_id, date_from, date_to, limit)
+            )
+        else:
+            cursor.execute(
+                "SELECT date, description, category, amount FROM expenses "
+                "WHERE user_id = ? ORDER BY date DESC LIMIT ?",
+                (user_id, limit)
+            )
         rows = cursor.fetchall()
         return [
             {
@@ -104,22 +131,32 @@ def get_recent_transactions(user_id, limit=10):
         conn.close()
 
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, date_from=None, date_to=None):
     """
     Calculates per-category spending breakdown.
     Returns list of dicts with name, amount, pct (percentage rounded to int).
     Percentages sum to 100, with largest category absorbing rounding remainder.
     Returns empty list if no expenses.
+    Optional date_from and date_to filter expenses by date range (inclusive).
     """
     conn = get_db()
     cursor = conn.cursor()
 
     try:
-        # Get per-category totals
-        cursor.execute(
-            "SELECT category, SUM(amount) AS total FROM expenses WHERE user_id = ? GROUP BY category ORDER BY total DESC",
-            (user_id,)
-        )
+        # Get per-category totals with optional date filter
+        if date_from and date_to:
+            cursor.execute(
+                "SELECT category, SUM(amount) AS total FROM expenses "
+                "WHERE user_id = ? AND date BETWEEN ? AND ? "
+                "GROUP BY category ORDER BY total DESC",
+                (user_id, date_from, date_to)
+            )
+        else:
+            cursor.execute(
+                "SELECT category, SUM(amount) AS total FROM expenses "
+                "WHERE user_id = ? GROUP BY category ORDER BY total DESC",
+                (user_id,)
+            )
         rows = cursor.fetchall()
 
         if not rows:

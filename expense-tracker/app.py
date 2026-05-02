@@ -115,23 +115,82 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    from flask import session
+    from flask import session, request, flash
+    from datetime import datetime, timedelta
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
     user_id = session.get("user_id")
 
-    # Fetch real data from database
+    # Parse date filter parameters
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    preset = request.args.get("preset", "").strip()
+
+    # Handle preset filters
+    if preset and not (date_from or date_to):
+        today = datetime.now().date()
+        if preset == "this_month":
+            date_from = today.replace(day=1).isoformat()
+            date_to = today.isoformat()
+        elif preset == "last_3_months":
+            date_to = today.isoformat()
+            date_from = (today - timedelta(days=90)).isoformat()
+        elif preset == "last_6_months":
+            date_to = today.isoformat()
+            date_from = (today - timedelta(days=180)).isoformat()
+        elif preset == "all_time":
+            date_from = None
+            date_to = None
+
+    # Validate date formats
+    validated_from = None
+    validated_to = None
+
+    if date_from or date_to:
+        try:
+            if date_from:
+                validated_from = datetime.strptime(date_from, "%Y-%m-%d").date()
+            if date_to:
+                validated_to = datetime.strptime(date_to, "%Y-%m-%d").date()
+
+            # Validate date range
+            if validated_from and validated_to and validated_from > validated_to:
+                flash("Start date must be before end date.")
+                validated_from = None
+                validated_to = None
+            else:
+                # Convert back to ISO format strings for queries
+                if validated_from:
+                    validated_from = validated_from.isoformat()
+                if validated_to:
+                    validated_to = validated_to.isoformat()
+        except ValueError:
+            # Invalid date format - silently fall back to no filter
+            validated_from = None
+            validated_to = None
+
+    # Fetch real data from database with date filter
     user_info = get_user_by_id(user_id)
-    summary_stats = get_summary_stats(user_id)
-    transactions = get_recent_transactions(user_id)
-    category_breakdown = get_category_breakdown(user_id)
+    summary_stats = get_summary_stats(user_id, date_from=validated_from, date_to=validated_to)
+    transactions = get_recent_transactions(user_id, date_from=validated_from, date_to=validated_to)
+    category_breakdown = get_category_breakdown(user_id, date_from=validated_from, date_to=validated_to)
+
+    # Determine active filter label for template
+    filter_label = "All Time"
+    if validated_from and validated_to:
+        filter_label = f"{validated_from} to {validated_to}"
+    elif preset:
+        filter_label = preset.replace("_", " ").title()
 
     return render_template("profile.html",
                            user_info=user_info,
                            summary_stats=summary_stats,
                            transactions=transactions,
-                           category_breakdown=category_breakdown)
+                           category_breakdown=category_breakdown,
+                           date_from=validated_from,
+                           date_to=validated_to,
+                           filter_label=filter_label)
 
 
 @app.route("/expenses/add")
