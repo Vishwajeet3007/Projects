@@ -11,6 +11,7 @@ app.secret_key = "spendly-dev-secret-key-change-in-production"
 # Routes                                                              #
 # ------------------------------------------------------------------ #
 
+
 @app.route("/")
 def landing():
     return render_template("landing.html")
@@ -105,6 +106,7 @@ def privacy():
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
+
 @app.route("/logout")
 def logout():
     from flask import session
@@ -191,6 +193,14 @@ def profile():
                            date_from=validated_from,
                            date_to=validated_to,
                            filter_label=filter_label)
+
+
+@app.route("/analytics")
+def analytics():
+    from flask import session, redirect, url_for
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+    return render_template("analytics.html")
 
 
 @app.route("/expenses/add")
