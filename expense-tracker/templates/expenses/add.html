@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense — Spendly{% endblock %}
+
+{% block content %}
+
+<section class="auth-section">
+    <div class="auth-container">
+
+        <div class="auth-header">
+            <h1 class="auth-title">Add Expense</h1>
+            <p class="auth-subtitle">Track your spending</p>
+        </div>
+
+        <div class="auth-card">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="auth-error">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('add_expense') }}">
+                <div class="form-group">
+                    <label for="amount">Amount (₹)</label>
+                    <input type="number" id="amount" name="amount"
+                           class="form-input" placeholder="Enter amount"
+                           step="0.01" min="0.01" required
+                           value="{{ request.form.get('amount', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="category" class="form-input" required>
+                        <option value="">Select a category</option>
+                        <option value="Food"{% if request.form.get('category') == 'Food' %} selected{% endif %}>Food</option>
+                        <option value="Transport"{% if request.form.get('category') == 'Transport' %} selected{% endif %}>Transport</option>
+                        <option value="Bills"{% if request.form.get('category') == 'Bills' %} selected{% endif %}>Bills</option>
+                        <option value="Health"{% if request.form.get('category') == 'Health' %} selected{% endif %}>Health</option>
+                        <option value="Entertainment"{% if request.form.get('category') == 'Entertainment' %} selected{% endif %}>Entertainment</option>
+                        <option value="Shopping"{% if request.form.get('category') == 'Shopping' %} selected{% endif %}>Shopping</option>
+                        <option value="Other"{% if request.form.get('category') == 'Other' %} selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" name="date"
+                           class="form-input" required
+                           value="{{ request.form.get('date', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="description">Description (optional)</label>
+                    <textarea id="description" name="description"
+                              class="form-input" placeholder="Brief description"
+                              rows="3">{{ request.form.get('description', '') }}</textarea>
+                </div>
+                    <a href="{{ url_for('profile') }}" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-submit">Add Expense</button>
+            </form>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}
