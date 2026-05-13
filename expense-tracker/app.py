@@ -1,10 +1,56 @@
 import sqlite3
-from flask import Flask, render_template, request, flash, redirect, url_for
-from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
+from flask import Flask, render_template, request, flash, redirect, url_for, session
+from database.db import get_db, init_db, seed_db, create_user, get_user_by_email, insert_expense
 from database.queries import get_user_by_id, get_summary_stats, get_recent_transactions, get_category_breakdown
 
 app = Flask(__name__)
 app.secret_key = "spendly-dev-secret-key-change-in-production"
+app.config['DATABASE'] = "expense_tracker.db"
+
+# Module-level constants
+ALLOWED_CATEGORIES = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+
+
+def validate_expense_form(form_data):
+    """Validate expense form data and return (is_valid, validated_data_or_error_message)."""
+    amount = form_data.get("amount", "").strip()
+    category = form_data.get("category", "").strip()
+    date = form_data.get("date", "").strip()
+    description = form_data.get("description", "").strip()
+
+    # Validate required fields
+    if not amount or not category or not date:
+        return False, "Amount, category, and date are required"
+
+    # Validate category is in the allowed list
+    if category not in ALLOWED_CATEGORIES:
+        return False, "Invalid category"
+
+    # Validate amount is a positive number
+    try:
+        amount_float = float(amount)
+        if amount_float <= 0:
+            return False, "Amount must be greater than zero"
+    except ValueError:
+        return False, "Amount must be a valid number"
+
+    # Validate date format and not in future
+    from datetime import datetime
+    try:
+        expense_date = datetime.strptime(date, "%Y-%m-%d").date()
+        today = datetime.now().date()
+        if expense_date > today:
+            return False, "Date cannot be in the future"
+    except ValueError:
+        return False, "Invalid date format"
+
+    # All validations passed
+    return True, {
+        "amount": amount_float,
+        "category": category,
+        "date": date,
+        "description": description if description else None
+    }
 
 
 # ------------------------------------------------------------------ #
@@ -203,12 +249,33 @@ def analytics():
     return render_template("analytics.html")
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        is_valid, result = validate_expense_form(request.form)
+        if not is_valid:
+            flash(result)
+            return render_template("expenses/add.html")
 
+        # Insert expense
+        try:
+            expense_id = insert_expense(
+                user_id=session["user_id"],
+                amount=result["amount"],
+                category=result["category"],
+                date=result["date"],
+                description=result["description"]
+            )
+            flash("Expense added successfully!")
+            return redirect(url_for("profile"))
+        except Exception as e:
+            flash("Failed to add expense. Please try again.")
+            return render_template("expenses/add.html")
+    # GET request - show form
+    return render_template("expenses/add.html")
 
-@app.route("/expenses/<int:id>/edit")
 def edit_expense(id):
     return "Edit expense — coming in Step 8"
 

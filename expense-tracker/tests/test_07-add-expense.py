@@ -1,0 +1,311 @@
+import pytest
+from app import app
+from database.db import init_db, create_user, get_db, insert_expense
+
+@pytest.fixture
+def client():
+    app.config['TESTING'] = True
+    # Create a temporary file for the database
+    import tempfile
+    import os
+    db_fd, db_path = tempfile.mkstemp()
+    app.config['DATABASE'] = db_path
+    with app.test_client() as client:
+        with app.app_context():
+            init_db()
+            # Create a test user
+            user_id = create_user('Test User', 'test@example.com', 'testpass')
+            client.user_id = user_id
+    yield client
+    # Close and remove the temporary file
+    os.close(db_fd)
+    os.unlink(db_path)
+def login(client, email, password):
+    """Log in a user via the login route."""
+    return client.post('/login', data={
+        'email': email,
+        'password': password
+    }, follow_redirects=True)
+
+def logout(client):
+    """Log out the user."""
+    return client.get('/logout', follow_redirects=True)
+
+# Unit tests for insert_expense (from database.db)
+def test_insert_expense_valid_data():
+    """insert_expense should insert a row with valid data and return the new ID."""
+    with app.app_context():
+        # Set up a temporary database
+        import tempfile
+        import os
+        db_fd, db_path = tempfile.mkstemp()
+        app.config['DATABASE'] = db_path
+        init_db()
+        try:
+            # Create a user to associate the expense with
+            user_id = create_user('Test User 2', 'test2@example.com', 'testpass')
+            # Insert an expense
+            expense_id = insert_expense(
+                user_id=user_id,
+                amount=50.0,
+                category='Food',
+                date='2026-03-20',
+                description='Lunch'
+            )
+            # Verify the expense was inserted
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+                "SELECT id, user_id, amount, category, date, description FROM expenses WHERE id = ?",
+                (expense_id,)
+            )
+            row = cursor.fetchone()
+            assert row is not None
+            assert row['user_id'] == user_id
+            assert row['amount'] == 50.0
+            assert row['category'] == 'Food'
+            assert row['date'] == '2026-03-20'
+            assert row['description'] == 'Lunch'
+            # Clean up
+            db.close()
+        finally:
+            os.close(db_fd)
+            os.unlink(db_path)
+def test_insert_expense_no_description():
+    """insert_expense should store NULL for description when None is provided."""
+    with app.app_context():
+        # Set up a temporary database
+        import tempfile
+        import os
+        db_fd, db_path = tempfile.mkstemp()
+        app.config['DATABASE'] = db_path
+        init_db()
+        try:
+            user_id = create_user('Test User 3', 'test3@example.com', 'testpass')
+            expense_id = insert_expense(
+                user_id=user_id,
+                amount=30.0,
+                category='Transport',
+                date='2026-03-21',
+                description=None
+            )
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+                "SELECT description FROM expenses WHERE id = ?",
+                (expense_id,)
+            )
+            row = cursor.fetchone()
+            assert row is not None
+            assert row['description'] is None
+            db.close()
+        finally:
+            os.close(db_fd)
+            os.unlink(db_path)
+def test_get_add_expense_redirects_when_not_logged_in(client):
+    """Unauthenticated access to GET /expenses/add should redirect to login."""
+    response = client.get('/expenses/add')
+    # Should redirect to login page
+    assert response.status_code == 302
+    assert '/login' in response.location
+
+def test_get_add_expense_returns_form_when_logged_in(client):
+    """Authenticated GET /expenses/add should return 200 and show the form."""
+    # Log in the test user
+    login(client, 'test@example.com', 'testpass')
+    response = client.get('/expenses/add')
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    # Check for form
+    assert '<form' in html
+    assert 'method="POST"' in html
+    assert 'action="/expenses/add"' in html
+    # Check for category select with all 7 options
+    expected_categories = ['Food', 'Transport', 'Bills', 'Health', 'Entertainment', 'Shopping', 'Other']
+    for category in expected_categories:
+        assert f'<option value="{category}">{category}</option>' in html
+    # Check for amount, date, description inputs
+    assert 'name="amount"' in html
+    assert 'name="date"' in html
+    assert 'name="description"' in html
+
+# Route tests for POST /expenses/add
+def test_post_add_expense_redirects_when_not_logged_in(client):
+    """Unauthenticated POST to /expenses/add should redirect to login."""
+    response = client.post('/expenses/add', data={
+        'amount': '50.0',
+        'category': 'Food',
+        'date': '2026-03-20',
+        'description': 'Lunch'
+    })
+    assert response.status_code == 302
+    assert '/login' in response.location
+
+def test_post_add_expense_successful_redirects_to_profile(client):
+    """Valid expense submission should redirect to profile and insert the expense."""
+    # Log in
+    login(client, 'test@example.com', 'testpass')
+    # Submit the form
+    response = client.post('/expenses/add', data={
+        'amount': '50.0',
+        'category': 'Food',
+        'date': '2026-03-20',
+        'description': 'Lunch'
+    }, follow_redirects=False)  # We expect a redirect
+    # Should redirect to profile
+    assert response.status_code == 302
+    assert '/profile' in response.location
+    # Verify the expense was inserted in the database
+    with app.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            "SELECT id, user_id, amount, category, date, description FROM expenses WHERE user_id = ?",
+            (client.user_id,)
+        )
+        row = cursor.fetchone()
+        assert row is not None
+        assert row['amount'] == 50.0
+        assert row['category'] == 'Food'
+        assert row['date'] == '2026-03-20'
+        assert row['description'] == 'Lunch'
+        db.close()
+
+def test_post_add_expense_missing_amount_shows_error(client):
+    """Missing amount should re-render the form with an error."""
+    login(client, 'test@example.com', 'testpass')
+    response = client.post('/expenses/add', data={
+        'amount': '',  # missing
+        'category': 'Food',
+        'date': '2026-03-20',
+        'description': 'Lunch'
+    })
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    # Should contain an error message
+    assert 'Amount, category, and date are required' in html
+    # Should re-populate the other fields
+    assert 'value="Food"' in html  # category
+    assert 'value="2026-03-20"' in html  # date
+    assert 'Lunch' in html  # description
+
+def test_post_add_expense_zero_amount_shows_error(client):
+    """Amount of zero should be rejected with error."""
+    login(client, 'test@example.com', 'testpass')
+    response = client.post('/expenses/add', data={
+        'amount': '0',
+        'category': 'Food',
+        'date': '2026-03-20',
+        'description': 'Lunch'
+    })
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'Amount must be greater than zero' in html
+
+def test_post_add_expense_non_numeric_amount_shows_error(client):
+    """Non-numeric amount should be rejected."""
+    login(client, 'test@example.com', 'testpass')
+    response = client.post('/expenses/add', data={
+        'amount': 'abc',
+        'category': 'Food',
+        'date': '2026-03-20',
+        'description': 'Lunch'
+    })
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'Amount must be a valid number' in html
+
+def test_post_add_expense_invalid_category_shows_error(client):
+    """Category not in the fixed list should be rejected with an error message."""
+    login(client, 'test@example.com', 'testpass')
+    response = client.post('/expenses/add', data={
+        'amount': '50.0',
+        'category': 'InvalidCategory',
+        'date': '2026-03-20',
+        'description': 'Lunch'
+    })
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    # Should contain an error message for invalid category
+    assert 'Invalid category' in html
+    # Should re-populate the other fields
+    assert 'value="50.0"' in html  # amount
+    assert 'value="2026-03-20"' in html  # date
+    assert '>Lunch<' in html  # description
+
+def test_post_add_expense_invalid_date_shows_error(client):
+    """Invalid date string should be rejected."""
+    login(client, 'test@example.com', 'testpass')
+    response = client.post('/expenses/add', data={
+        'amount': '50.0',
+        'category': 'Food',
+        'date': 'not-a-date',
+        'description': 'Lunch'
+    })
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'Invalid date format' in html
+
+def test_post_add_expense_future_date_shows_error(client):
+    """Date in the future should be rejected."""
+    login(client, 'test@example.com', 'testpass')
+    # Use a date far in the future
+    future_date = '2030-01-01'
+    response = client.post('/expenses/add', data={
+        'amount': '50.0',
+        'category': 'Food',
+        'date': future_date,
+        'description': 'Lunch'
+    })
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'Date cannot be in the future' in html
+
+def test_post_add_expense_no_description_allowed(client):
+    """Optional description: submitting without description should save with NULL and redirect."""
+    login(client, 'test@example.com', 'testpass')
+    response = client.post('/expenses/add', data={
+        'amount': '25.50',
+        'category': 'Health',
+        'date': '2026-03-21',
+        'description': ''  # empty string
+    }, follow_redirects=False)
+    assert response.status_code == 302
+    assert '/profile' in response.location
+    # Verify the expense was inserted with description NULL
+    with app.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            "SELECT description FROM expenses WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+            (client.user_id,)
+        )
+        row = cursor.fetchone()
+        assert row is not None
+        assert row['description'] is None
+        db.close()
+
+# Additional test: ensure that after successful submission, the form is not re-rendered (redirect)
+def test_post_add_expense_does_not_render_form_on_success(client):
+    """After successful insert, the user should be redirected, not shown the form again."""
+    login(client, 'test@example.com', 'testpass')
+    response = client.post('/expenses/add', data={
+        'amount': '10.0',
+        'category': 'Shopping',
+        'date': '2026-03-22',
+        'description': 'Test'
+    }, follow_redirects=False)
+    assert response.status_code == 302
+    # Ensure the response data does not contain the form (since it's a redirect, the data might be empty)
+    # We can check that the response is a redirect and not HTML with a form.
+    # But we already checked the location.
+
+# Test that the cancel link on the form goes to profile (optional, but from spec)
+def test_add_expense_form_has_cancel_link_to_profile(client):
+    """The add expense form should have a cancel link pointing to /profile."""
+    login(client, 'test@example.com', 'testpass')
+    response = client.get('/expenses/add')
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    # Look for a link to /profile (could be an <a> tag)
+    assert 'href="/profile"' in html
