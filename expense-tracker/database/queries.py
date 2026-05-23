@@ -95,7 +95,7 @@ def get_summary_stats(user_id, date_from=None, date_to=None):
 def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """
     Fetches recent expenses for a user, ordered by date descending.
-    Returns list of dicts with date, description, category, amount.
+    Returns list of dicts with id, date, description, category, amount.
     Returns empty list if no expenses.
     Optional date_from and date_to filter expenses by date range (inclusive).
     """
@@ -106,20 +106,21 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
         # Fetch recent transactions with optional date filter
         if date_from and date_to:
             cursor.execute(
-                "SELECT date, description, category, amount FROM expenses "
+                "SELECT id, date, description, category, amount FROM expenses "
                 "WHERE user_id = ? AND date BETWEEN ? AND ? "
                 "ORDER BY date DESC LIMIT ?",
                 (user_id, date_from, date_to, limit)
             )
         else:
             cursor.execute(
-                "SELECT date, description, category, amount FROM expenses "
+                "SELECT id, date, description, category, amount FROM expenses "
                 "WHERE user_id = ? ORDER BY date DESC LIMIT ?",
                 (user_id, limit)
             )
         rows = cursor.fetchall()
         return [
             {
+                "id": row["id"],
                 "date": row["date"],
                 "description": row["description"],
                 "category": row["category"],
