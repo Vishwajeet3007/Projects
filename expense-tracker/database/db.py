@@ -166,3 +166,21 @@ def insert_expense(user_id, amount, category, date, description=None):
         return expense_id
     finally:
         conn.close()
+
+
+def update_expense(expense_id, user_id, amount, category, date, description=None):
+    """
+    Updates an existing expense for the given user.
+    Returns the number of rows affected (should be 1 if successful).
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? WHERE id = ? AND user_id = ?",
+            (amount, category, date, description, expense_id, user_id)
+        )
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
