@@ -276,8 +276,75 @@ def add_expense():
     # GET request - show form
     return render_template("expenses/add.html")
 
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    if request.method == "GET":
+        # Get the expense to ensure it belongs to the current user
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT id, amount, category, date, description FROM expenses WHERE id = ? AND user_id = ?",
+                (id, session["user_id"])
+            )
+            expense = cursor.fetchone()
+
+            if expense is None:
+                flash("Expense not found or access denied.")
+                return redirect(url_for("profile"))
+
+            # Convert to dict for easier access in template
+            expense_dict = dict(expense)
+            return render_template("expenses/edit.html", expense=expense_dict)
+        finally:
+            conn.close()
+
+    elif request.method == "POST":
+        # Validate form data
+        is_valid, result = validate_expense_form(request.form)
+        if not is_valid:
+            flash(result)
+            # Re-fetch the expense to re-populate form on validation error
+            conn = get_db()
+            cursor = conn.cursor()
+            try:
+                cursor.execute(
+                    "SELECT id, amount, category, date, description FROM expenses WHERE id = ? AND user_id = ?",
+                    (id, session["user_id"])
+                )
+                expense = cursor.fetchone()
+                if expense is None:
+                    flash("Expense not found or access denied.")
+                    return redirect(url_for("profile"))
+                expense_dict = dict(expense)
+                return render_template("expenses/edit.html", expense=expense_dict)
+            finally:
+                conn.close()
+
+        # Update the expense
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? WHERE id = ? AND user_id = ?",
+                (result["amount"], result["category"], result["date"], result["description"], id, session["user_id"])
+            )
+            conn.commit()
+
+            if cursor.rowcount == 0:
+                flash("Expense not found or access denied.")
+                return redirect(url_for("profile"))
+
+            flash("Expense updated successfully!")
+            return redirect(url_for("profile"))
+        except Exception as e:
+            flash("Failed to update expense. Please try again.")
+            return redirect(url_for("profile"))
+        finally:
+            conn.close()
 
 
 @app.route("/expenses/<int:id>/delete")
