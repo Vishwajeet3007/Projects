@@ -203,3 +203,44 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
         return breakdown
     finally:
         conn.close()
+
+
+def get_expense_by_id(expense_id, user_id):
+    """
+    Fetches a single expense by its ID, only if it belongs to the given user.
+    Returns the expense dict if found and owned by the user, None otherwise.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT id, amount, category, date, description FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id)
+        )
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
+    finally:
+        conn.close()
+
+
+def delete_expense(user_id, expense_id):
+    """
+    Deletes an expense for a specific user if it exists and belongs to the user.
+    Returns True if deletion was successful, False otherwise.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id)
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        # Log the exception if needed (in a real app)
+        return False
+    finally:
+        conn.close()

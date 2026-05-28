@@ -347,9 +347,25 @@ def edit_expense(id):
             conn.close()
 
 
-@app.route("/expenses/<int:id>/delete")
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
 def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    # Verify the expense exists and belongs to the current user
+    from database.queries import get_expense_by_id
+    expense = get_expense_by_id(id, session["user_id"])
+    if expense is None:
+        # Abort with 404 as per spec
+        from flask import abort
+        abort(404)
+
+    # Delete the expense
+    from database.queries import delete_expense
+    delete_expense(session["user_id"], id)
+    flash("Expense deleted successfully!")
+
+    return redirect(url_for("profile"))
 
 
 if __name__ == "__main__":
